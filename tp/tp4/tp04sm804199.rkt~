@@ -4,7 +4,7 @@
 
 ;;;;;;;;;
 ; Macro ;
-;;;;;;;;; 
+;;;;;;;;;
 
 (define-syntax-rule (with [(v-id sto-id) call] body)
   (type-case Result call
@@ -396,8 +396,3 @@
 (interp-expr `{ let {[r { record [a 1] [b 2] [c 5]}]}  
                   
                      { set! r b 3} })
-
-(test (interp (parse `{begin
-                        {box 2}
-                        {set-box! {box 5} 6}}) mt-env  mt-store)
-      (v*s (numV 6) (list (cell 1 (numV 2)) (cell 2 (numV 6))))) 
