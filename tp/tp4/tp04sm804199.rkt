@@ -177,11 +177,11 @@
 
     
     [(getE e s)
-     (let ([a (v*s-v (interp e env sto))]) 
-     (type-case Value a 
-       [(recV fds vs) (v*s (fetch (find s fds vs) sto) sto)]  
+     (let ([a (interp e env sto)]) 
+     (type-case Value (v*s-v a) 
+       [(recV fds vs) (v*s (fetch (find s fds vs) (v*s-s a)) (v*s-s a))]   
        [else (error 'interp "not a record")]))]
-
+ 
     [(setE e s e2)
      (let ([a (v*s-v (interp e env sto))])
      (type-case Value a
@@ -400,4 +400,7 @@
 (test (interp (parse `{begin
                         {box 2}
                         {set-box! {box 5} 6}}) mt-env  mt-store)
-      (v*s (numV 6) (list (cell 1 (numV 2)) (cell 2 (numV 6))))) 
+      (v*s (numV 6) (list (cell 1 (numV 2)) (cell 2 (numV 6)))))  
+
+(test (interp-expr `{get {record [a 0]} a})
+      (numV 0))

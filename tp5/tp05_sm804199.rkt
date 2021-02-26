@@ -2,7 +2,7 @@
 
 #lang plait
 
-;;;;;;;;;
+;;;;;;;;; 
 ; Macro ;
 ;;;;;;;;;
 
@@ -67,7 +67,7 @@
   
 (define mt-store (store empty empty))
 (define (override-store c l)
-  (store (cons c (store-storages l)) (store-pointers l)))
+  (store (override-store2 c (store-storages l)) (store-pointers l)));(cons c (store-storages l)) (store-pointers l)))
 
 (define (override-store2 c l)   
   (if (empty? l)
@@ -79,7 +79,7 @@
 
 (define (override-pointers p l)
   (store (store-storages l) (cons p (store-pointers l))))   
-
+ 
 ; Integer
 (define (integer? n) (= n (floor n))) 
 
@@ -666,3 +666,63 @@
                                                                               (cell 1 (numV 0)))
 
                                                                              (list (pointer 10 5) (pointer 1 3)))))
+
+(test
+   (interp (parse `(let ([p (malloc 1)])
+                     (begin
+                       (set-content! p 1)
+                       (begin
+                         (set-content! p 2)
+                         (begin
+                           (set-content! p 3)
+                           (begin
+                             (set-content! p 4)
+                             (begin
+                               (set-content! p 5)
+                               (free p))))))))
+           mt-env
+           mt-store)
+   (v*s (numV 0) (store (list (cell 2 (numV 1))) '())))
+
+(interp (parse `(let ([p (malloc 3)])
+                     (begin
+                       (set-content! (+ p 1) 42)
+                       
+                               (free p))))
+           mt-env
+           mt-store)
+
+(interp (parse `(set-content! 1 2)
+                       
+                               )
+           mt-env
+           mt-store)
+
+(test
+   (interp (parse `(let ([p (malloc 1)])
+                     (begin
+                       (set-content! p 1)
+                       (begin
+                         (set-content! p 2)
+                         (begin
+                           (set-content! p 3)
+                           (begin
+                             (set-content! p 4)
+                             (begin
+                               (set-content! p 5)
+                               (free p))))))))
+           mt-env
+           mt-store)
+   (v*s (numV 0) (store (list (cell 2 (numV 1))) '())))
+(test
+   (interp (parse `(let ([p (malloc 3)])
+                     (begin
+                       (set-content! (+ p 1) 42)
+                       (free p))))
+           mt-env
+           mt-store)
+   (v*s (numV 0) (store (list (cell 4 (numV 1))) '())))
+
+
+
+
