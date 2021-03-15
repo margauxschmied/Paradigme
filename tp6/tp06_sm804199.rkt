@@ -16,14 +16,14 @@
   [numS (n : Number)]
   [add1S]
   [plusS]
-  [multS]
+  [multS] 
 
   [trueS]
   [falseS]
   [ifS (cnd : ExpS) (l : ExpS) (r : ExpS)]  
   [zeroS]
 
-  [pairS]
+  [pairS] 
   [fstS]
   [sndS]
   [sub1S]
@@ -85,7 +85,7 @@
                   (parse (third sl)))))]  
     [(s-exp-match? `{ANY ANY ANY ...} s)
      (let ([sl (s-exp->list s)])
-       (appS (parse (first sl)) (map parse (rest sl))))]
+       (appS (parse (first sl)) (map parse (rest sl))))] 
     [else (error 'parse "invalid input")]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -104,58 +104,94 @@
                          (error 'desugar "not implemented"))]
     [(letS pars args body) (if (>= (length args) 1)
                                (app (lam pars body) args) 
-                               (error 'desugar "not implemented"))]
+                               (error 'desugar "not implemented"))] 
     [(numS n) (lamE 'f (lamE 'x (num n)))]
     [(add1S) (add1)]
     [(plusS) (add)]  
     [(multS) (mult)]
     [(trueS) (lamE 'x (lamE 'y (idE 'x)))]  
-    [(falseS) (lamE 'x (lamE 'y (idE 'y)))]
-    [(ifS cnd l r) (iff cnd l r)]
+    [(falseS) (lamE 'x (lamE 'y (idE 'y)))] 
+    [(ifS cnd l r) (iff (desugar cnd) (desugar l) (desugar r))]
     [(zeroS) (zero)]
-    [(pairS) (pair)]
+    [(pairS) (pair)] 
     [(fstS) (fst)]
     [(sndS) (snd)]
     [(sub1S) (sub1)]
     [(minusS) (sub)]
-    [(letrecS par arg body) (letre par arg body)]   
-    [else (begin (display e)(error 'desugar "not implemented"))]))
+    [(divS) (div)]
+    [(letrecS par arg body) (letre par arg body)]  ))
+;[else (begin (display e)(error 'desugar "not implemented"))])) 
+
+;(λdiv.div (λf.λx.f (f (f (f x)))) (λf.λx.f (f x)))(λm.λn.(λdivinter.divinter m n n)((λbody-proc.(λfX.fX fX)(λfX.(λf.body-proc f)(λx.fX fX x)))(λdivinter.λm.λn.λk.(λn.n (λ_.λx.λy.y) (λx.λy.x)) k (λd.(λn.λm.m (λn.λf.λx.f (n f x)) n)(λf.λx.f x) (divinter m n n)) (λd.(λn.n (λ_.λx.λy.y) (λx.λy.x)) m (λd.λf.λx.x) (λd.divinter ((λn.λm.m (λn.(λp.p (λx.λy.x))(n (λp.(λx.λy.λsel.sel x y)((λp.p (λx.λy.y)) p) ((λn.λf.λx.f (n f x))((λp.p (λx.λy.y)) p))) ((λx.λy.λsel.sel x y)(λf.λx.x) (λf.λx.x)))) n) m (λf.λx.f x)) n ((λn.λm.m (λn.(λp.p (λx.λy.x))(n (λp.(λx.λy.λsel.sel x y)((λp.p (λx.λy.y)) p) ((λn.λf.λx.f (n f x))((λp.p (λx.λy.y)) p))) ((λx.λy.λsel.sel x y)(λf.λx.x) (λf.λx.x)))) n) k (λf.λx.f x))) _) _)))
+
+;(define (div)
+;  (let ([par (idE 'divinter)])
+;    (let ([body (list par (idE'm) (idE'n) (idE'n))]) 
+;      (let ([arg (lam (list (idE'm) (idE'n) (idE'k))
+;                      (if ((zero) (idE'k))
+;                          ((add1) (par (idE'm) (idE'n) (idE'n))) 
+;                          (if ((zero) (idE 'm))
+;                              (desugar (numS 0)) 
+;                              (par (sub1) (idE 'm) (idE'n) (sub1) (idE 'k))))
+;                          )])
+;        (display arg))))
+  
+;  )
+
+(define (div)
+  (desugar
+   (letS
+    (list 'div 'm 'n) 
+    (list
+     (lamS
+      '(m)
+      (lamS 
+       '(n)
+       (letrecS
+        'divinter
+        (lamS
+         '(m)
+         (lamS
+          '(n)
+          (lamS
+           '(k)
+           (ifS
+            (appS (zeroS) (list (idS 'k)))
+            (appS (plusS) (list (numS 1) (appS (idS 'divinter) (list (idS 'm) (idS 'n) (idS 'n)))))
+            (ifS (appS (zeroS) (list (idS 'm))) (numS 0) (appS (idS 'divinter) (list (appS (minusS) (list (idS 'm) (numS 1))) (idS 'n) (appS (minusS) (list (idS 'k) (numS 1))))))))))
+        (appS (idS 'divinter) (list (idS 'm) (idS 'n) (idS 'n)))))))
+    (appS (idS 'div) (list (idS'm) (idS'n))))))
+
+  
 
 (define (letre par arg body)
-  ;(λbody-proc.(λfX.fX fX)(λfX.(λf.body-proc f)(λx.fX fX x)))
+  
+  ;(λbody-proc.(λfX.fX fX)(λfX.(λf.body-proc f)(λx.fX fX x)))  
   ;[(letrecS par arg body)
   (appE(lamE par
              (desugar body))
-       (appE (lamE 'body-proc 
-                   (appE (lamE 'fX
-                               (appE (idE'fX)
-                                     (idE'fX)))
-                         (lamE 'fX
-                               (appE (lamE 'f
-                                           (appE (idE'body-proc)
-                                                 (idE'f)))
-                                     (appE (appE (lamE 'x (idE'fX)) (idE'fX)) (idE'x))))))
-             (lamE par (desugar arg)))))
+       (appE (body-proc)  
+             (lamE par (desugar arg)))))  
+ 
+(define (body-proc) 
+  (lamE 'body-proc 
+        (appE (lamE 'fX  
+                    (appE (idE'fX)
+                          (idE'fX)))
+              (lamE 'fX
+                    (appE (lamE 'f
+                                (appE (idE'body-proc)  
+                                      (idE'f)))
+                          (lamE 'x (app (idE'fX) (list (idS'fX) (idS'x)))))))));(app (lamE 'x (idE'fX)) (list (idS'fX) (idS'x))))))))
  
 ;on veux:
 ;(λfac.fac (λf.λx.f (f (f (f (f (f x)))))))((λbody-proc.(λfX.fX fX)(λfX.(λf.body-proc f)(λx.fX fX x)))(λfac.λn.(λn.n (λ_.λx.λy.y) (λx.λy.x)) n (λ_.λf.λx.f x) (λ_.(λn.λm.n ((λn.λm.n (add1) m) m) (λf.λx.x)) n (fac ((λn.λm.m ((λshift.λn.(fst)(n shift ((pair)(λf.λx.x) (λf.λx.x))))(shift))) n) n (λf.λx.f x)))) _))
 
 ;on a:
-;(λfac.fac (λf.λx.f (f (f (f (f (f x)))))))((λbody-proc.(λfX.fX fX)(λfX.(λf.body-proc f)((λx.fX) fX x)))((λpar.λn.(λn.n (λx.λx.λy.y) (λx.λy.x)) n (λd.λf.λx.f x) (λd.(λn.λm.m ((λn.λm.m (λn.λf.λx.f (n f x)) n) n) _) n (fac ((λn.λm.m (λn.(λp.p (λx.λy.x))(n (λp.(λx.λy.λsel.sel x y)((λp.p (λx.λy.y)) p) ((λn.λf.λx.f (n f x))((λp.p (λx.λy.y)) p))) ((λx.λy.λsel.sel x y)(λf.λx.x) (λf.λx.x)))) n) n (λf.λx.f x)))) (λf.λx.x)) _))
+;(λfac.fac (λf.λx.f (f (f (f (f (f x)))))))((λbody-proc.(λfX.fX fX)(λfX.(λf.body-proc f)((λx.fX) fX x)))(λfac.λn.(λn.n (λx.λx.λy.y) (λx.λy.x)) n (λd.λf.λx.f x) (λd.(λn.λm.m ((λn.λm.m (λn.λf.λx.f (n f x)) n) n) (λf.λx.x)) n (fac ((λn.λm.m (λn.(λp.p (λx.λy.x))(n (λp.(λx.λy.λsel.sel x y)((λp.p (λx.λy.y)) p) ((λn.λf.λx.f (n f x))((λp.p (λx.λy.y)) p))) ((λx.λy.λsel.sel x y)(λf.λx.x) (λf.λx.x)))) n) n (λf.λx.f x)))) _))
 
-;  (appE (lamE par
-;              (appE(desugar body)
-;                   (appE (appE (lamE 'body-proc
-;                                     (lamE 'fX
-;                                                      (appE (idE 'fX)
-;                                                                (idE 'fX))))
-;                               (appE (lamE 'fX
-;                                           (lamE 'f
-;                                                     (appE (idE 'body-roc)
-;                                                              (idE 'f))))
-;                                     (lamE 'x
-;                                           (app (idE'fx) (list (idS'fx)(idS'x))))
-;                                           (desugar arg)))))))))
+
+                                         
 
 (define (sub)
   ;sub ≡ λn.λm.m sub1 n
@@ -189,21 +225,22 @@
   
 
 (define (zero)
-  ;λn.n (λx.false) true
-  (lamE 'n (appE (appE (idE 'n) (lamE 'x (desugar (falseS)))) (desugar (trueS)))))
+  ;λn.n (λx.false) true 
+  (lamE 'n (appE (appE (idE 'n) (lamE '_ (desugar (falseS)))) (desugar (trueS)))))
 
 (define (iff cnd l r)
   ;{{{test
   ;{lambda {d} if-true}}
-  ;{lambda {d} if-false}} 0}
-  (appE (appE (appE (desugar cnd) (lamE 'd (desugar l))) (lamE 'd (desugar r))) (desugar (numS 0))))
+  ;{lambda {d} if-false}} 0} 
+  (appE (appE (appE cnd (lamE 'd l)) (lamE 'd r)) (idE '_)))
 
 ;{lambda {x} {lambda {y} x}} ≡ true
-;{lambda {x} {lambda {y} y}} ≡ false
+;{lambda {x} {lambda {y} y}} ≡ false 
 
 (define (mult)
   ;λn.λm.m (add n) _
-  (lamavecE (list 'n 'm) (appE (appE (idE'm) (appE (add) (idE 'n))) (idE '_)))) 
+  ;(λn.λm.m ((λn.λm.m (λn.λf.λx.f (n f x)) n) n) _)(λf.λx.f (f (f (f (f (f (f (f (f (f x)))))))))) (λf.λx.f (f (f (f x))))
+  (lamavecE (list 'n 'm) (appE (appE (idE'm) (appE (add) (idE 'n))) (desugar (numS 0))))) 
 
 (define (add)
   ;λn.λm.m add1 n
@@ -218,12 +255,14 @@
 (define (num n)
   (if (equal? n 0)
       (idE 'x)
-      (appE (idE 'f) (num (- n 1)))))  
+      (appE (idE 'f) (num (- n 1)))))   
 
 (define (app fun args)
   (if (empty? args)  
       fun
-      (app (appE fun (desugar (first args))) (rest args))))   
+      (app (appE fun (desugar (first args))) (rest args))))
+
+
 
 (define (lam pars body)
   (if (=(length pars) 1)
@@ -241,16 +280,16 @@
 
 ; Substitution
 (define (subst [what : Exp] [for : Symbol] [in : Exp]) : Exp
-  (type-case Exp in
+  (type-case Exp in 
     [(idE s) (if (equal? s for) what in)]
     [(lamE par body) (if (equal? par for) in (lamE par (subst what for body)))]
     [(appE fun arg) (appE (subst what for fun) (subst what for arg))]))
-
-; Interpréteur (pas de décente dans un lambda)
-(define (interp [e : Exp]) : Exp
+ 
+; Interpréteur (pas de décente dans un lambda) 
+(define (interp [e : Exp]) : Exp 
   (type-case Exp e
     [(appE fun arg)
-     (type-case Exp (interp fun)
+     (type-case Exp (interp fun) 
        [(lamE par body) (interp (subst (interp arg) par body))]
        [else e])] 
     [else e]))
@@ -272,7 +311,7 @@
                            (expr->string arg)
                            (strings-append (list "(" (expr->string arg) ")")))])
        (if (and (lamE? fun) (not (idE? arg)))
-           (string-append fun-string arg-string)
+           (string-append fun-string arg-string) 
            (strings-append (list fun-string " " arg-string))))]))
 
 ; Transforme une expression en nombre si possible
@@ -286,7 +325,7 @@
     [else (error 'expr->number "not a number")])) 
           
 ; Compte le nombre d'application de f à x
-(define (destruct [e : Exp] [f : Symbol] [x : Symbol]) : Number
+(define (destruct [e : Exp] [f : Symbol] [x : Symbol]) : Number 
   (type-case Exp (interp e)
     [(idE s) (if (equal? s x)
                  0
@@ -306,7 +345,7 @@
           [(idE s) (cond
                      ((equal? x s) #t)
                      ((equal? y s) #f)
-                     (else (error 'expr->boolean "not a boolean")))]
+                     (else (error 'expr->boolean "not a boolean")))] 
           [else (error 'expr->boolean "not a boolean")])]
        [else (error 'expr->boolean "not a boolean")])]
     [else (error 'expr->boolean "not a boolean")]))
@@ -340,6 +379,8 @@
 (test (interp-boolean `false) #f)
 (test (interp-number `{if true 0 1}) 0)
 (test (interp-number `{if false 0 1}) 1)
+(test ( interp-number `{if true 5 1}) 5)
+(test ( interp-number `{if false 5 1}) 1)
 (test (interp-boolean `{zero? 0}) #t) 
 (test (interp-boolean `{zero? 1}) #f)
 
@@ -347,10 +388,31 @@
 (test (interp (desugar (parse `{snd {pair a b}}))) (idE 'b)) 
 (test (interp-number `{sub1 4}) 3) 
 (test (interp-number `{- 4 3}) 1)
-(test (interp-number `{- 1 2}) 0)
+(test (interp-number `{- 1 2}) 0)  
 
-(test (interp-number`{letrec {[fac {lambda {n} {if {zero? n} 1{* n {fac {- n 1}}}}}]} {fac 6}}) 720)
+(test (interp-number`{letrec {[fac {lambda {n}{if {zero? n} 1{* n {fac {- n 1}}}}}]}{fac 6}}) 720)
+;(test (interp-number`{letrec {[fac {lambda {n} {lambda {a}
+;                                                 {if {zero? n}
+;                                                     a
+;                                                     (fac (- n 1)(+ a 1)) }}}]}  
+;                       {fac 10 3}}) 13)   
+ 
 
-(expr->string (desugar (parse `{letrec {[fac {lambda {n} {if {zero? n} 1{* n {fac {- n 1}}}}}]} {fac 6}})))
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             
-                                                                                                                                                                                                             
+;(expr->string (desugar (parse `{let {[div {lambda {m} {lambda {n} 
+;                                                        {letrec {[divinter {lambda {m} {lambda {n} {lambda {k}
+;                                                                                        
+;                                                                                                     {if {zero? k}
+;                                                                                                         (+ 1 (divinter m n n))
+;                                                                                                         {if {zero? m}
+;                                                                                                             0
+;                                                                                                             (divinter (- m 1) n (- k 1))}}}}}]}
+;                                                          {divinter m n n}}}}]}
+;
+;                                                 
+;                                 {div 4 2}}) )) 
+
+
+(test (interp-number `{/ (+ 8 0) 4}) 2)   
+
+
+

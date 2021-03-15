@@ -82,7 +82,7 @@
  
 ; Integer
 (define (integer? n) (= n (floor n))) 
-
+ 
 ;;;;;;;;;;;;;;;;;;;;;;
 ; Analyse syntaxique ;
 ;;;;;;;;;;;;;;;;;;;;;;
@@ -192,7 +192,7 @@
 (define (free e env sto)
   (let ([debut (interp e env sto)]) 
     (let ([taille (findtaille (numV-n (v*s-v debut)) (store-pointers (v*s-s debut)))])    
-      (if (integer? taille)    
+      (if (and (integer? taille) (> taille 0))   
           (libere (numV-n (v*s-v debut)) (numV-n (v*s-v debut)) taille taille env (store-storages (v*s-s debut)) (store-pointers (v*s-s debut)))
           (error 'interp "not an allocated pointer")))))
 
@@ -213,7 +213,7 @@
       (v*s (numV 0) (store stor (supprimepoint d t point empty)))
       
       (libere d (+ debut 1) t (- taille 1) env (recherchesto debut stor empty) point)))  
-
+ 
 (define (recherchesto debut stor s) 
   (if (empty? stor)
       (error 'interp "not an allocated pointer") 
@@ -253,22 +253,24 @@
         )))   
 
 (define (setcontent l e env sto)
-  (let ([loc (location l env sto)])  
+  (let ([loc (location l env sto)])
+    (if (and (integer? (numV-n (v*s-v loc))) (> (numV-n (v*s-v loc)) 0)) 
     (with [(v-l sto-l) (interp e env (v*s-s loc))]   
           (let ([derniersto (override-store (cell (numV-n (v*s-v loc)) v-l) sto-l)])   
-            (v*s v-l derniersto)))      
+            (v*s v-l derniersto)))
+    (error 'interp "segmentation fault")) 
     ))
 
 (define (location l env sto)
   (let ([n (interp l env sto)])  
-    (if (integer? (numV-n (v*s-v n)))
+    (if (and (integer? (numV-n (v*s-v n))) (> (numV-n (v*s-v n)) 0)) 
         (v*s (v*s-v n) (v*s-s n))
         (error 'interp "segmentation fault"))
     ))  
 
 (define (content e env sto)
   (let ([n (interp e env sto)])  
-    (if (integer? (numV-n (v*s-v n))) 
+    (if (and (integer? (numV-n (v*s-v n))) (> (numV-n (v*s-v n)) 0)) 
         (v*s (fetch (numV-n (v*s-v n)) (v*s-s n)) (v*s-s n))
         (error 'interp "segmentation fault"))     
     )) 
@@ -721,8 +723,10 @@
                        (free p))))
            mt-env
            mt-store)
-   (v*s (numV 0) (store (list (cell 4 (numV 1))) '())))
+   (v*s (numV 0) (store (list (cell 4 (numV 1))) '()))) 
 
+(test/exn (interp-expr `{set-content! 0 2}) "segmentation fault")
 
-
-
+(test (interp-expr `{let {[x 1]}
+                          {let {[x 3]}
+                            {address x}}}) (numV 2))
