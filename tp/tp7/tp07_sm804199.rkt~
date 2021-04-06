@@ -17,7 +17,7 @@
   [ifE (cnd : Exp) (l : Exp) (r : Exp)]
   [lamE (par : Symbol) (body : Exp)]
   [appE (fun : Exp) (arg : Exp)]
-  [pairE (f : Exp) (s : Exp)]
+  [pairE (f : Exp) (s : Exp)] 
   [fstE (e : Exp)]
   [sndE (e : Exp)])
 

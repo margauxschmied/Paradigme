@@ -19,7 +19,7 @@
   [appE (fun : Exp) (arg : Exp)]
   [pairE (f : Exp) (s : Exp)] 
   [fstE (e : Exp)]
-  [sndE (e : Exp)])
+  [sndE (e : Exp)]) 
 
 ; Représentation des valeurs
 (define-type Value

@@ -81,7 +81,7 @@
     [(multE l r) (num* (interp l env) (interp r env))]
     [(letrecE s rhs body)
      (letrec ([new-env (extend-env (bind s (lambda () val)) env)]
-              [val (interp rhs new-env)]) 
+              [val (interp rhs new-env)])
        (interp body new-env))]
     [(ifE cnd l r)
      (type-case Value (interp cnd env)
