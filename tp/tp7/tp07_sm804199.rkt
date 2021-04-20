@@ -30,7 +30,7 @@
 
 ; Représentation des liaisons
 
-;(define-type Binding
+;(define-type Binding 
 ;  [bind (name : Symbol) (val : (Boxof Value))])
 
 (define-type Binding
